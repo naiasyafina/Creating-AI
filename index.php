@@ -95,19 +95,28 @@ include "koneksi.php"
       $hasil = $conn->query($sql); 
 
       while($row = $hasil->fetch_assoc()){
+        // Buat excerpt (ringkasan) dari isi artikel - maksimal 200 karakter
+        $excerpt = substr($row["isi"], 0, 200);
+        // Jika artikel lebih panjang dari 200 karakter, tambahkan "..."
+        if (strlen($row["isi"]) > 200) {
+            $excerpt .= "...";
+        }
       ?>
         <div class="col">
-          <div class="card h-100">
-            <img src="img/<?= $row["gambar"]?>" class="card-img-top" alt="..." />
-            <div class="card-body">
+          <div class="card h-100 shadow-sm hover-card">
+            <img src="img/<?= $row["gambar"]?>" class="card-img-top" alt="<?= $row["judul"]?>" style="height: 200px; object-fit: cover;" />
+            <div class="card-body d-flex flex-column">
               <h5 class="card-title"><?= $row["judul"]?></h5>
-              <p class="card-text">
-                <?= $row["isi"]?>
+              <p class="card-text text-muted small text-start flex-grow-1">
+                <?= $excerpt?>
               </p>
+              <a href="article_detail.php?id=<?= $row["id"]?>" class="btn btn-primary btn-sm mt-2">
+                <i class="bi bi-book-half"></i> Read More
+              </a>
             </div>
-            <div class="card-footer">
+            <div class="card-footer ">
               <small class="text-body-secondary">
-                <?= $row["tanggal"]?>
+                <i class="bi bi-calendar3"></i> <?= date('d M Y', strtotime($row["tanggal"]))?>
               </small>
             </div>
           </div>

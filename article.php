@@ -9,7 +9,7 @@
         </div>
         <!-- Awal Modal Tambah-->
         <div class="modal fade" id="modalTambah" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header bg-primary-subtle text-white">
                         <h1 class="modal-title fs-5 text-dark" id="staticBackdropLabel">
@@ -20,11 +20,11 @@
                     <form method="post" action="" enctype="multipart/form-data">
                         <div class="modal-body">
                             <!-- AI Disclaimer -->
-                            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                                <h6 class="alert-heading mb-2">
+                            <div class="alert alert-warning alert-dismissible fade show py-2 mb-2" role="alert">
+                                <h6 class="alert-heading mb-1" style="font-size: 0.9rem;">
                                     <i class="bi bi-exclamation-triangle-fill"></i> Disclaimer Penggunaan AI
                                 </h6>
-                                <small>
+                                <small style="font-size: 0.75rem;">
                                     <ul class="mb-0 ps-3">
                                         <li>Artikel dihasilkan oleh <strong>Artificial Intelligence (Gemini API)</strong></li>
                                         <li>Hasil AI mungkin <strong>tidak 100% akurat</strong> dan perlu verifikasi</li>
@@ -35,45 +35,36 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
                             
-                            <div class="mb-3">
-                                <label for="formGroupExampleInput" class="form-label fw-bold">Judul</label>
-                                <input type="text" class="form-control" id="judulInput" name="judul" placeholder="Tuliskan Judul Artikel" required>
-                                <small class="text-muted">
-                                    <i class="bi bi-info-circle"></i> Minimal 5 karakter untuk generate AI
-                                </small>
+                            <div class="mb-2">
+                                <label class="form-label fw-bold mb-1">Judul</label>
+                                <input type="text" class="form-control form-control-sm" id="judulInput" name="judul" placeholder="Tuliskan Judul Artikel" required>
                             </div>
                             
                             <!-- Tombol Generate AI -->
-                            <div class="mb-3">
-                                <button type="button" class="btn btn-primary" id="btnGenerateAI">
+                            <div class="mb-2">
+                                <button type="button" class="btn btn-primary btn-sm" id="btnGenerateAI">
                                     <i class="bi bi-magic"></i> Generate Isi Artikel dengan AI
                                 </button>
-                                <small class="text-muted d-block mt-1">
-                                    <i class="bi bi-lightbulb"></i> AI akan membuat artikel berdasarkan judul
-                                </small>
                             </div>
                             
-                            <div class="mb-3">
-                                <label for="floatingTextarea2" class="fw-bold">Isi</label>
-                                <textarea class="form-control" id="isiTextarea" placeholder="Tuliskan Isi Artikel atau klik 'Generate dengan AI'" name="isi" rows="8" required></textarea>
-                                <small class="text-muted">
-                                    <i class="bi bi-pencil"></i> Anda bisa edit hasil AI sebelum menyimpan
-                                </small>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="formGroupExampleInput2" class="form-label">Gambar (Opsional)</label>
-                                <input type="file" class="form-control" name="gambar">
+                            <div class="mb-2">
+                                <label class="form-label fw-bold mb-1">Isi</label>
+                                <textarea class="form-control form-control-sm" id="isiTextarea" placeholder="Tuliskan Isi Artikel atau klik 'Generate dengan AI'" name="isi" rows="5" required></textarea>
                             </div>
                             
                             <!-- Alert untuk AI status -->
-                            <div id="aiAlert" class="alert alert-info" style="display:none;">
-                                <i class="bi bi-hourglass-split"></i> <span id="aiMessage">AI sedang generate artikel...</span>
+                            <div id="aiAlert" class="alert alert-info py-2 mb-2" style="display:none;">
+                                <small><span id="aiMessage"></span></small>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <label class="form-label mb-1">Gambar (Opsional)</label>
+                                <input type="file" class="form-control form-control-sm" name="gambar">
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <input type="submit" value="Simpan" name="simpan" class="btn btn-primary">
+                        <div class="modal-footer py-2">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                            <input type="submit" value="Simpan" name="simpan" class="btn btn-primary btn-sm">
                         </div>
                     </form>
                 </div>
@@ -103,7 +94,7 @@ $(document).ready(function(){
         load_data(hlm);
     });
     
-    // AI Article Generator
+    // AI Article Generator untuk Modal TAMBAH
     $('#btnGenerateAI').click(function() {
         var judul = $('#judulInput').val().trim();
         
@@ -113,9 +104,10 @@ $(document).ready(function(){
             return;
         }
         
+        
         // Show loading
-        $('#aiAlert').show().removeClass('alert-success alert-danger').addClass('alert-info');
-        $('#aiMessage').html('<i class="bi bi-hourglass-split"></i> AI sedang generate artikel, tunggu sebentar...');
+        $('#aiAlert').show().css('display', 'block').removeClass('alert-success alert-danger').addClass('alert-info');
+        $('#aiMessage').text('⏳ AI sedang generate artikel, tunggu sebentar...');
         $('#btnGenerateAI').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generating...');
         
         // Call AI API
@@ -129,7 +121,7 @@ $(document).ready(function(){
                 if (response.success) {
                     $('#isiTextarea').val(response.article);
                     $('#aiAlert').removeClass('alert-info').addClass('alert-success');
-                    $('#aiMessage').html('<i class="bi bi-check-circle"></i> ' + response.message);
+                    $('#aiMessage').text(response.message);
                     
                     // Hide alert after 5 seconds
                     setTimeout(function() {
@@ -137,15 +129,68 @@ $(document).ready(function(){
                     }, 5000);
                 } else {
                     $('#aiAlert').removeClass('alert-info').addClass('alert-danger');
-                    $('#aiMessage').html('<i class="bi bi-x-circle"></i> ' + response.message);
+                    $('#aiMessage').text(response.message);
                 }
             },
             error: function(xhr, status, error) {
                 $('#aiAlert').removeClass('alert-info').addClass('alert-danger');
-                $('#aiMessage').html('<i class="bi bi-x-circle"></i> Error: ' + error);
+                $('#aiMessage').text('❌ Error: ' + error);
             },
             complete: function() {
                 $('#btnGenerateAI').prop('disabled', false).html('<i class="bi bi-magic"></i> Generate Isi Artikel dengan AI');
+            }
+        });
+    });
+    
+    // AI Article Generator untuk Modal EDIT (menggunakan event delegation)
+    $(document).on('click', '.btnGenerateEditAI', function() {
+        var articleId = $(this).data('id');
+        var judul = $('#judulEdit' + articleId).val().trim();
+        
+        if (judul.length < 5) {
+            alert('Masukkan judul terlebih dahulu (minimal 5 karakter)');
+            $('#judulEdit' + articleId).focus();
+            return;
+        }
+        
+        var $btn = $(this);
+        var $alert = $('#aiAlertEdit' + articleId);
+        var $textarea = $('#isiEditTextarea' + articleId);
+        
+        
+        // Show loading
+        $alert.show().css('display', 'block').removeClass('alert-success alert-danger').addClass('alert-info');
+        $alert.find('.aiEditMessage').text('⏳ AI sedang generate artikel, tunggu sebentar...');
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generating...');
+        
+        // Call AI API
+        $.ajax({
+            url: 'ai_article_generator.php',
+            method: 'POST',
+            data: { judul: judul },
+            dataType: 'json',
+            timeout: 60000,
+            success: function(response) {
+                if (response.success) {
+                    $textarea.val(response.article);
+                    $alert.removeClass('alert-info').addClass('alert-success');
+                    $alert.find('.aiEditMessage').text(response.message);
+                    
+                    // Hide alert after 5 seconds
+                    setTimeout(function() {
+                        $alert.fadeOut();
+                    }, 5000);
+                } else {
+                    $alert.removeClass('alert-info').addClass('alert-danger');
+                    $alert.find('.aiEditMessage').text(response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                $alert.removeClass('alert-info').addClass('alert-danger');
+                $alert.find('.aiEditMessage').text('❌ Error: ' + error);
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="bi bi-magic"></i> Generate Ulang Isi Artikel dengan AI');
             }
         });
     });

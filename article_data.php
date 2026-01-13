@@ -20,6 +20,11 @@
                     $hasil = $conn->query($sql);
   
                     while ($row = $hasil->fetch_assoc()) {
+                        // Buat excerpt untuk isi artikel - maksimal 150 karakter
+                        $excerpt = substr($row["isi"], 0, 150);
+                        if (strlen($row["isi"]) > 150) {
+                            $excerpt .= "...";
+                        }
                     ?>
                         <tr>
                             <td><?= $no++ ?></td>
@@ -28,7 +33,9 @@
                                 <br>pada : <?= $row["tanggal"] ?>
                                 <br>oleh : <?= $row["username"] ?>
                             </td>
-                            <td><?= $row["isi"] ?></td>
+                            <td>
+                                <small class="text-muted"><?= $excerpt ?></small>
+                            </td>
                             <td>
                                 <?php
                                 if ($row["gambar"] != '') {
@@ -45,44 +52,81 @@
                                 <a href="#" title="delete" class="badge rounded-pill text-bg-danger" data-bs-toggle="modal" data-bs-target="#modalHapus<?= $row["id"] ?>"><i class="bi bi-x-circle"></i></a>
                                 <!-- Awal Modal Edit -->
                             <div class="modal fade" id="modalEdit<?= $row["id"] ?>" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-                                <div class="modal-dialog">
+                                <div class="modal-dialog modal-lg modal-dialog-scrollable">
                                     <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h1 class="modal-title fs-5" id="staticBackdropLabel">Edit Article</h1>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        <div class="modal-header bg-primary-subtle">
+                                            <h1 class="modal-title fs-5 text-dark" id="staticBackdropLabel">
+                                                <i class="bi bi-pencil-square"></i> Edit Article dengan AI
+                                            </h1>
+                                            <button type="button" class="btn-close btn-close-black" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <form method="post" action="" enctype="multipart/form-data">
                                             <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <label for="formGroupExampleInput" class="form-label">Judul</label>
+                                                <!-- AI Disclaimer for Edit -->
+                                                <div class="alert alert-warning alert-dismissible fade show py-2 mb-2" role="alert">
+                                                    <h6 class="alert-heading mb-1" style="font-size: 0.9rem;">
+                                                        <i class="bi bi-info-circle-fill"></i> AI untuk Re-generate Artikel
+                                                    </h6>
+                                                    <small style="font-size: 0.75rem;">
+                                                        <ul class="mb-0 ps-3">
+                                                            <li>Klik tombol <strong>"Generate Ulang dengan AI"</strong> untuk membuat artikel baru berdasarkan judul</li>
+                                                            <li>Artikel lama akan <strong>diganti</strong> dengan hasil AI</li>
+                                                            <li>Anda dapat <strong>mengedit hasil AI</strong> sebelum menyimpan</li>
+                                                        </ul>
+                                                    </small>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                                </div>
+                                                
+                                                <div class="mb-2">
+                                                    <label class="form-label fw-bold mb-1">Judul</label>
                                                     <input type="hidden" name="id" value="<?= $row["id"] ?>">
-                                                    <input type="text" class="form-control" name="judul" placeholder="Tuliskan Judul Artikel" value="<?= $row["judul"] ?>" required>
+                                                    <input type="text" class="form-control form-control-sm judulEdit" id="judulEdit<?= $row["id"] ?>" name="judul" value="<?= $row["judul"] ?>" required>
                                                 </div>
-                                                <div class="mb-3">
-                                                    <label for="floatingTextarea2">Isi</label>
-                                                    <textarea class="form-control" placeholder="Tuliskan Isi Artikel" name="isi" required><?= $row["isi"] ?></textarea>
+                                                
+                                                <!-- Tombol Generate AI untuk Edit -->
+                                                <div class="mb-2">
+                                                    <button type="button" class="btn btn-primary btn-sm btnGenerateEditAI" data-id="<?= $row["id"] ?>">
+                                                        <i class="bi bi-magic"></i> Generate Ulang dengan AI
+                                                    </button>
                                                 </div>
-                                                <div class="mb-3">
-                                                    <label for="formGroupExampleInput2" class="form-label">Ganti Gambar</label>
-                                                    <input type="file" class="form-control" name="gambar">
+                                                
+                                                <div class="mb-2">
+                                                    <label class="form-label fw-bold mb-1">Isi</label>
+                                                    <textarea class="form-control form-control-sm isiEditTextarea" id="isiEditTextarea<?= $row["id"] ?>" name="isi" rows="5" required><?= $row["isi"] ?></textarea>
                                                 </div>
-                                                <div class="mb-3">
-                                                    <label for="formGroupExampleInput3" class="form-label">Gambar Lama</label>
-                                                    <?php
-                                                    if ($row["gambar"] != '') {
-                                                        if (file_exists('img/' . $row["gambar"] . '')) {
-                                                    ?>
-                                                            <br><img src="img/<?= $row["gambar"] ?>" width="100">
-                                                    <?php
-                                                        }
-                                                    }
-                                                    ?>
-                                                    <input type="hidden" name="gambar_lama" value="<?= $row["gambar"] ?>">
+                                                
+                                                <!-- Alert untuk AI status di Edit Modal -->
+                                                <div id="aiAlertEdit<?= $row["id"] ?>" class="alert alert-info py-2 mb-2" style="display:none;">
+                                                    <small><i class="bi bi-hourglass-split"></i> <span class="aiEditMessage">AI sedang generate...</span></small>
+                                                </div>
+                                                
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-2">
+                                                        <label class="form-label mb-1">Ganti Gambar</label>
+                                                        <input type="file" class="form-control form-control-sm" name="gambar">
+                                                    </div>
+                                                    <div class="col-md-6 mb-2">
+                                                        <label class="form-label mb-1">Gambar Lama</label>
+                                                        <div>
+                                                            <?php
+                                                            if ($row["gambar"] != '') {
+                                                                if (file_exists('img/' . $row["gambar"] . '')) {
+                                                            ?>
+                                                                    <img src="img/<?= $row["gambar"] ?>" width="80" class="img-thumbnail">
+                                                            <?php
+                                                                }
+                                                            } else {
+                                                                echo '<small class="text-muted">Tidak ada gambar</small>';
+                                                            }
+                                                            ?>
+                                                            <input type="hidden" name="gambar_lama" value="<?= $row["gambar"] ?>">
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                <input type="submit" value="simpan" name="simpan" class="btn btn-primary">
+                                            <div class="modal-footer py-2">
+                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                                                <input type="submit" value="Simpan" name="simpan" class="btn btn-primary btn-sm">
                                             </div>
                                         </form>
                                     </div>
