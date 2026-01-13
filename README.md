@@ -2,33 +2,32 @@ Website fan NCT Dream yang menampilkan artikel, galeri, dan jadwal dengan fitur 
 
 ---
 
-## ✨ Fitur Utama
+## Fitur Utama
 
-### 👥 **User Side (Public)**
-- 🏠 **Homepage** - Hero section dengan informasi utama
-- 📰 **Article List** - Daftar artikel tentang NCT Dream
-- 📖 **Article Detail** - Halaman detail artikel
-- 🖼️ **Gallery Carousel** - Galeri foto member NCT Dream
-- 📅 **Schedule** - Jadwal kuliah mingguan
-- 👤 **Profile Team** - Informasi tim developer
+### **User Side (Public)**
+- **Homepage** - Hero section dengan informasi utama
+- **Article List** - Daftar artikel tentang NCT Dream
+- **Article Detail** - Halaman detail artikel
+- **Gallery Carousel** - Galeri foto member NCT Dream
+- **Profile Team** - Informasi tim developer
 
-### 🔐 **Admin Panel**
-- 📊 **Dashboard** - Statistik artikel dan galeri
-- ✍️ **Article Management** - CRUD artikel
-  - ✨ **AI Generator** - Generate artikel otomatis dengan Gemini AI
-  - 📝 Edit & Delete artikel
-  - 🖼️ Upload gambar artikel
-- 🖼️ **Gallery Management** - Upload dan kelola galeri foto
-- 🔒 **Authentication** - Login/Logout system
+### **Admin Panel**
+- **Dashboard** - Statistik artikel dan galeri
+- **Article Management** - CRUD artikel
+  - **AI Generator** - Generate artikel otomatis dengan Gemini AI
+  - Edit & Delete artikel
+  - Upload gambar artikel
+- **Gallery Management** - Upload dan kelola galeri foto
+- **Authentication** - Login/Logout system
 
-### 🤖 **AI Integration**
+### **AI Integration**
 - **Google Gemini 2.0 Flash** untuk generate artikel
 - Automatic content generation berdasarkan judul
 - Error handling dan debugging
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Technology | Purpose |
 |------------|---------|
@@ -68,21 +67,21 @@ Creating-AI/
 
 ---
 
-## ⚙️ Instalasi
+## Instalasi
 
-### 1️⃣ **Prasyarat**
+### 1️. **Prasyarat**
 - PHP 7.4 atau lebih tinggi
 - MySQL / MariaDB
 - XAMPP / WAMP / LAMP (untuk localhost)
 - Composer (optional)
 
-### 2️⃣ **Clone Repository**
+### 2️. **Clone Repository**
 ```bash
 git clone https://github.com/naiasyafina/Creating-AI.git
 cd Creating-AI
 ```
 
-### 3️⃣ **Setup Database**
+### 3️. **Setup Database**
 
 1. Buat database baru di phpMyAdmin:
 ```sql
@@ -96,7 +95,7 @@ CREATE DATABASE uaspbw;
 mysql -u root -p uaspbw < uaspbw.sql
 ```
 
-### 4️⃣ **Konfigurasi Environment**
+### 4️. **Konfigurasi Environment**
 
 Buat file `.env` di root folder:
 
@@ -117,7 +116,7 @@ GEMINI_API_KEY=your_gemini_api_key_here
 > 3. Klik "Create API Key"
 > 4. Copy API key ke file `.env`
 
-### 5️⃣ **Jalankan Aplikasi**
+### 5️. **Jalankan Aplikasi**
 
 ```bash
 # Jika menggunakan XAMPP:
@@ -135,9 +134,9 @@ http://localhost/Creating-AI/login.php
 
 ---
 
-## 🚀 Deploy ke Hosting
+## Deploy ke Hosting
 
-### 📌 **Deploy ke InfinityFree / Hosting Gratis**
+### **Deploy ke InfinityFree / Hosting Gratis**
 
 1. **Upload Files**
    - Upload semua file via FTP (gunakan FileZilla)
@@ -164,25 +163,25 @@ http://localhost/Creating-AI/login.php
    https://yourdomain.infinityfreeapp.com/
    ```
 
-> ⚠️ **Catatan Penting untuk InfinityFree:**
+> **Catatan Penting untuk InfinityFree:**
 > - AI Generator **mungkin tidak berfungsi** (API external sering diblokir)
 > - Upload gambar work normal
 > - Database connection work dengan hostname khusus
 
-📖 **Lihat panduan lengkap**: [troubleshooting_hosting.md](troubleshooting_hosting.md)
+**Lihat panduan lengkap**: [troubleshooting_hosting.md](troubleshooting_hosting.md)
 
 ---
 
-## 📖 Cara Menggunakan
+## Cara Menggunakan
 
-### 🌐 **Public Side**
+### **Public Side**
 
 1. Buka `http://localhost/Creating-AI/`
 2. Browse artikel, gallery, schedule
 3. Klik artikel untuk detail
 4. Toggle dark/light mode dengan tombol di navbar
 
-### 🔐 **Admin Panel**
+### **Admin Panel**
 
 1. **Login**
    ```
@@ -212,7 +211,7 @@ http://localhost/Creating-AI/login.php
 
 ---
 
-## 🗄️ Database Schema
+## Database Schema
 
 ### Table: `article`
 | Column | Type | Description |
@@ -241,9 +240,9 @@ http://localhost/Creating-AI/login.php
 
 ---
 
-## 🔒 Keamanan
+## Keamanan
 
-### ✅ **Best Practices yang Diterapkan:**
+### **Best Practices yang Diterapkan:**
 
 1. **Environment Variables**
    - Kredensial database di `.env`
@@ -258,7 +257,7 @@ http://localhost/Creating-AI/login.php
    - Validasi tipe file gambar
    - Rename file dengan timestamp
 
-### ⚠️ **TODO - Security Improvements:**
+### **TODO - Security Improvements:**
 - [ ] Ganti MD5 dengan password_hash()
 - [ ] Implement CSRF protection
 - [ ] Input validation & sanitization
@@ -266,7 +265,7 @@ http://localhost/Creating-AI/login.php
 
 ---
 
-## 🤝 Tim Developer
+## Tim Developer
 
 | Nama | NIM | Role |
 |------|-----|------|
@@ -277,7 +276,7 @@ http://localhost/Creating-AI/login.php
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### ❌ **Error: HTTP 500**
 **Solusi**: Cek syntax error di PHP files. Pastikan semua statement diakhiri dengan semicolon (`;`)
@@ -309,17 +308,17 @@ git pull origin naia
 git push origin naia
 ```
 
-📖 **Lihat panduan lengkap**: [Troubleshooting Hosting](troubleshooting_hosting.md)
+**Lihat panduan lengkap**: [Troubleshooting Hosting](troubleshooting_hosting.md)
 
 ---
 
-## 📝 License
+## License
 
-Project ini dibuat untuk tugas **UAS Pemrograman Berbasis Web** - Universitas Dian Nuswantoro 2024.
+Project ini dibuat untuk tugas **UAS Pemrograman Berbasis Web** - Universitas Dian Nuswantoro 2026.
 
 ---
 
-## 🙏 Credits
+## Credits
 
 - **NCT Dream** - Inspirasi & konten
 - **Bootstrap** - UI Framework
@@ -328,12 +327,12 @@ Project ini dibuat untuk tugas **UAS Pemrograman Berbasis Web** - Universitas Di
 
 ---
 
-## 📞 Support
+## Support
 
 Jika ada pertanyaan atau issue:
-- 📧 Email: syafinanaia@gmail.com
-- 💬 WhatsApp: +62 822-4154-9915
-- 🐛 Issues: [GitHub Issues](https://github.com/naiasyafina/Creating-AI/issues)
+- Email: syafinanaia@gmail.com
+- WhatsApp: +62 822-4154-9915
+- Issues: [GitHub Issues](https://github.com/naiasyafina/Creating-AI/issues)
 
 ---
 
