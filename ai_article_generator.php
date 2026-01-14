@@ -18,6 +18,92 @@ function debug_log($message, $data = null) {
     }
 }
 
+// ============================================
+// FUNGSI FALLBACK API KEY
+// ============================================
+
+/**
+ * Mendapatkan daftar API keys yang tersedia
+ * Mengembalikan array API keys (yang tidak kosong)
+ */
+function getAvailableApiKeys() {
+    $keys = [];
+    
+    // API Key utama
+    $key1 = env('GEMINI_API_KEY');
+    if (!empty($key1)) {
+        $keys[] = ['key' => $key1, 'name' => 'Primary Key'];
+    }
+    
+    // API Key cadangan 1
+    $key2 = env('GEMINI_API_KEY_2');
+    if (!empty($key2)) {
+        $keys[] = ['key' => $key2, 'name' => 'Backup Key 1'];
+    }
+    
+    // API Key cadangan 2
+    $key3 = env('GEMINI_API_KEY_3');
+    if (!empty($key3)) {
+        $keys[] = ['key' => $key3, 'name' => 'Backup Key 2'];
+    }
+    
+    return $keys;
+}
+
+/**
+ * Melakukan request ke Gemini API
+ * @return array ['success' => bool, 'data' => array|null, 'error' => string|null, 'httpCode' => int]
+ */
+function callGeminiAPI($apiKey, $data) {
+    $apiUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=' . $apiKey;
+    
+    $ch = curl_init($apiUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json'
+    ]);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+    
+    if ($curlError) {
+        return [
+            'success' => false,
+            'data' => null,
+            'error' => 'cURL Error: ' . $curlError,
+            'httpCode' => 0
+        ];
+    }
+    
+    $responseData = json_decode($response, true);
+    
+    if ($httpCode !== 200) {
+        return [
+            'success' => false,
+            'data' => $responseData,
+            'error' => $responseData['error']['message'] ?? 'Unknown API error',
+            'httpCode' => $httpCode
+        ];
+    }
+    
+    return [
+        'success' => true,
+        'data' => $responseData,
+        'error' => null,
+        'httpCode' => $httpCode
+    ];
+}
+
+// ============================================
+// MAIN LOGIC
+// ============================================
+
 // Pastikan request method adalah POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
@@ -41,13 +127,18 @@ if (empty($judul)) {
     exit;
 }
 
-// API Key dari environment variable - AMAN untuk di-push ke GitHub!
-$apiKey = env('GEMINI_API_KEY');
+// Dapatkan semua API keys yang tersedia
+$apiKeys = getAvailableApiKeys();
 
-// Endpoint Gemini API
-$apiUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=' . $apiKey;
+if (empty($apiKeys)) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Tidak ada API key yang dikonfigurasi. Tambahkan GEMINI_API_KEY di file .env'
+    ]);
+    exit;
+}
 
-debug_log("API URL", $apiUrl);
+debug_log("Available API keys", count($apiKeys) . " keys found");
 
 // Prompt untuk artikel yang lebih panjang dan lengkap
 $prompt = "Tulis artikel LENGKAP dan PANJANG dalam Bahasa Indonesia tentang: \"$judul\"
@@ -129,130 +220,155 @@ $data = [
 
 debug_log("Request payload", $data);
 
-// Initialize cURL
-$ch = curl_init($apiUrl);
+// ============================================
+// FALLBACK MECHANISM - Coba semua API keys
+// ============================================
 
-// Set cURL options
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    'Content-Type: application/json'
-]);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Untuk debugging
+$result = null;
+$usedKeyName = '';
+$triedKeys = [];
+$lastError = null;
 
-// Execute request
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-debug_log("HTTP Code", $httpCode);
-debug_log("Raw Response", $response);
-
-// Check for cURL errors
-if (curl_errno($ch)) {
-    $error = curl_error($ch);
-    curl_close($ch);
+// Loop melalui semua API keys
+foreach ($apiKeys as $index => $keyInfo) {
+    $currentKey = $keyInfo['key'];
+    $keyName = $keyInfo['name'];
     
-    debug_log("cURL Error", $error);
+    debug_log("Trying API key: $keyName (key " . ($index + 1) . " of " . count($apiKeys) . ")");
     
-    echo json_encode([
-        'success' => false,
-        'message' => 'Error connecting to AI: ' . $error,
-        'debug' => $DEBUG_MODE ? ['curl_error' => $error] : null
-    ]);
-    exit;
+    $result = callGeminiAPI($currentKey, $data);
+    
+    $triedKeys[] = [
+        'name' => $keyName,
+        'success' => $result['success'],
+        'httpCode' => $result['httpCode'],
+        'error' => $result['error']
+    ];
+    
+    // Jika berhasil, keluar dari loop
+    if ($result['success']) {
+        $usedKeyName = $keyName;
+        debug_log("Success with $keyName");
+        break;
+    }
+    
+    // Simpan error terakhir
+    $lastError = $result;
+    
+    // Jika error 429 (quota exceeded), coba key berikutnya
+    if ($result['httpCode'] == 429) {
+        debug_log("Quota exceeded for $keyName, trying next key...");
+        continue;
+    }
+    
+    // Jika error 403 (API key invalid), coba key berikutnya
+    if ($result['httpCode'] == 403) {
+        debug_log("API key invalid for $keyName, trying next key...");
+        continue;
+    }
+    
+    // Untuk error lain (bukan quota/invalid key), langsung return error
+    debug_log("Fatal error on $keyName: " . $result['error']);
+    break;
 }
 
-curl_close($ch);
+// ============================================
+// PROCESS RESULT
+// ============================================
 
-// Parse response
-$responseData = json_decode($response, true);
-
-debug_log("Parsed Response", $responseData);
-
-// Check if response is valid
-if ($httpCode !== 200) {
-    $errorMsg = $responseData['error']['message'] ?? 'Unknown error';
+if ($result && $result['success']) {
+    // Berhasil mendapatkan hasil
+    $responseData = $result['data'];
     
-    debug_log("API Error", ['code' => $httpCode, 'message' => $errorMsg]);
-    
-    // Check jika quota exceeded
-    if ($httpCode == 429) {
+    if (isset($responseData['candidates'][0]['content']['parts'][0]['text'])) {
+        $generatedText = trim($responseData['candidates'][0]['content']['parts'][0]['text']);
+        
+        debug_log("Generated Text", $generatedText);
+        
+        // Cek finish reason untuk deteksi artikel terpotong
+        $finishReason = $responseData['candidates'][0]['finishReason'] ?? 'UNKNOWN';
+        debug_log("Finish Reason", $finishReason);
+        
+        $warningMsg = "";
+        
+        // Periksa jika artikel terpotong
+        if ($finishReason === 'MAX_TOKENS') {
+            $warningMsg = " ⚠️ (Artikel mencapai batas maksimal, mungkin ada bagian yang terpotong. Silakan edit atau generate ulang)";
+        } elseif ($finishReason === 'SAFETY') {
+            $warningMsg = " ⚠️ (Beberapa konten difilter oleh AI untuk keamanan)";
+        } elseif (strlen($generatedText) < 300) {
+            $warningMsg = " ⚠️ (Artikel terlalu pendek, silakan generate ulang untuk hasil lebih lengkap)";
+            debug_log("WARNING: Text too short", strlen($generatedText));
+        }
+        
+        // Tambahkan info jika menggunakan backup key
+        if ($usedKeyName !== 'Primary Key') {
+            $warningMsg .= " ℹ️ (Menggunakan $usedKeyName)";
+        }
+        
+        // Validasi output - pastikan ada titik di akhir
+        if (!preg_match('/[.!?]$/', $generatedText)) {
+            $generatedText .= '.';
+            debug_log("Added period to complete sentence");
+        }
+        
+        // Hitung jumlah kalimat
+        $sentenceCount = preg_match_all('/[.!?]+/', $generatedText);
+        debug_log("Sentence count", $sentenceCount);
+        
         echo json_encode([
-            'success' => false,
-            'message' => '❌ API Quota habis! Silakan gunakan API key baru atau aktifkan billing.',
-            'debug' => $DEBUG_MODE ? ['http_code' => $httpCode, 'response' => $responseData] : null
+            'success' => true,
+            'article' => $generatedText,
+            'message' => '✅ Artikel berhasil di-generate oleh AI!' . $warningMsg,
+            'debug' => $DEBUG_MODE ? [
+                'text_length' => strlen($generatedText),
+                'sentence_count' => $sentenceCount,
+                'finish_reason' => $finishReason,
+                'model' => 'gemini-2.5-flash',
+                'api_key_used' => $usedKeyName,
+                'keys_tried' => $triedKeys,
+                'full_response' => $responseData
+            ] : null
         ]);
     } else {
+        debug_log("No content in response");
+        
+        $finishReason = $responseData['candidates'][0]['finishReason'] ?? 'unknown';
+        debug_log("Finish Reason", $finishReason);
+        
         echo json_encode([
             'success' => false,
-            'message' => 'AI API Error: ' . $errorMsg,
-            'debug' => $DEBUG_MODE ? ['http_code' => $httpCode, 'response' => $responseData] : null
+            'message' => 'Tidak dapat mengambil hasil dari AI. Reason: ' . $finishReason,
+            'debug' => $DEBUG_MODE ? [
+                'finish_reason' => $finishReason,
+                'api_key_used' => $usedKeyName,
+                'keys_tried' => $triedKeys,
+                'full_response' => $responseData
+            ] : null
         ]);
     }
-    exit;
-}
-
-// Extract generated text
-if (isset($responseData['candidates'][0]['content']['parts'][0]['text'])) {
-    $generatedText = trim($responseData['candidates'][0]['content']['parts'][0]['text']);
-    
-    debug_log("Generated Text", $generatedText);
-    
-    // Cek finish reason untuk deteksi artikel terpotong
-    $finishReason = $responseData['candidates'][0]['finishReason'] ?? 'UNKNOWN';
-    debug_log("Finish Reason", $finishReason);
-    
-    $warningMsg = "";
-    
-    // Periksa jika artikel terpotong
-    if ($finishReason === 'MAX_TOKENS') {
-        $warningMsg = " ⚠️ (Artikel mencapai batas maksimal, mungkin ada bagian yang terpotong. Silakan edit atau generate ulang)";
-    } elseif ($finishReason === 'SAFETY') {
-        $warningMsg = " ⚠️ (Beberapa konten difilter oleh AI untuk keamanan)";
-    } elseif (strlen($generatedText) < 300) {
-        // Jika artikel terlalu pendek (kurang dari 300 karakter)
-        $warningMsg = " ⚠️ (Artikel terlalu pendek, silakan generate ulang untuk hasil lebih lengkap)";
-        debug_log("WARNING: Text too short", strlen($generatedText));
-    }
-    
-    // Validasi output - pastikan ada titik di akhir (kalimat lengkap)
-    if (!preg_match('/[.!?]$/', $generatedText)) {
-        // Jika tidak ada tanda baca di akhir, tambahkan titik
-        $generatedText .= '.';
-        debug_log("Added period to complete sentence");
-    }
-    
-    // Hitung jumlah kalimat
-    $sentenceCount = preg_match_all('/[.!?]+/', $generatedText);
-    debug_log("Sentence count", $sentenceCount);
-    
-    echo json_encode([
-        'success' => true,
-        'article' => $generatedText,
-        'message' => '✅ Artikel berhasil di-generate oleh AI!' . $warningMsg,
-        'debug' => $DEBUG_MODE ? [
-            'text_length' => strlen($generatedText),
-            'sentence_count' => $sentenceCount,
-            'finish_reason' => $finishReason,
-            'model' => 'gemini-2.5-flash',
-            'full_response' => $responseData
-        ] : null
-    ]);
 } else {
-    debug_log("No content in response");
+    // Semua API keys gagal
+    debug_log("All API keys failed", $triedKeys);
     
-    // Cek apakah ada finish_reason
-    $finishReason = $responseData['candidates'][0]['finishReason'] ?? 'unknown';
-    debug_log("Finish Reason", $finishReason);
+    $errorMessage = '❌ Semua API key gagal!';
+    
+    if ($lastError) {
+        if ($lastError['httpCode'] == 429) {
+            $errorMessage = '❌ Semua API key kehabisan quota! Silakan tambahkan API key baru di file .env (GEMINI_API_KEY_2, GEMINI_API_KEY_3)';
+        } elseif ($lastError['httpCode'] == 403) {
+            $errorMessage = '❌ Semua API key tidak valid! Periksa konfigurasi API key di file .env';
+        } else {
+            $errorMessage = '❌ AI API Error: ' . ($lastError['error'] ?? 'Unknown error');
+        }
+    }
     
     echo json_encode([
         'success' => false,
-        'message' => 'Tidak dapat mengambil hasil dari AI. Reason: ' . $finishReason,
+        'message' => $errorMessage,
         'debug' => $DEBUG_MODE ? [
-            'finish_reason' => $finishReason,
-            'full_response' => $responseData
+            'keys_tried' => $triedKeys,
+            'last_error' => $lastError
         ] : null
     ]);
 }
