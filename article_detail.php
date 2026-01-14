@@ -44,10 +44,18 @@ $article = $result->fetch_assoc();
             border-radius: 10px;
         }
         .article-content {
-            line-height: 1.8;
+            line-height: 1.5;
             font-size: 1.1rem;
             text-align: justify;
             white-space: pre-line;
+        }
+        .article-content p {
+            text-indent: 2.5em;
+            margin-bottom: 0.3rem;
+            margin-top: 0;
+        }
+        .article-content p:first-child {
+            margin-top: 0;
         }
         .back-btn:hover {
             transform: translateX(-5px);
@@ -127,7 +135,16 @@ $article = $result->fetch_assoc();
                     <div class="card border-0 shadow-sm">
                         <div class="card-body p-4 p-md-5">
                             <div class="article-content">
-                                <?= nl2br(htmlspecialchars($article["isi"])) ?>
+                                <?php
+                                // Split artikel berdasarkan baris kosong (double newline)
+                                $paragraphs = preg_split('/\n\s*\n/', $article["isi"]);
+                                foreach($paragraphs as $paragraph) {
+                                    $paragraph = trim($paragraph);
+                                    if (!empty($paragraph)) {
+                                        echo '<p>' . nl2br(htmlspecialchars($paragraph)) . '</p>';
+                                    }
+                                }
+                                ?>
                             </div>
                         </div>
                     </div>
