@@ -185,6 +185,10 @@ $article = $result->fetch_assoc();
                                      style="height: 150px; object-fit: cover;">
                                 <div class="card-body">
                                     <h6 class="card-title"><?= htmlspecialchars($related["judul"])?></h6>
+                                    <p class="card-text small text-muted mb-2">
+                                        <i class="bi bi-calendar3"></i> 
+                                        <?= date('d M Y', strtotime($related["tanggal"])) ?>
+                                    </p>
                                     <p class="card-text small text-muted"><?= $excerpt?></p>
                                     <a href="article_detail.php?id=<?= $related["id"]?>" class="btn btn-sm btn-outline-primary">
                                         Read More <i class="bi bi-arrow-right"></i>
